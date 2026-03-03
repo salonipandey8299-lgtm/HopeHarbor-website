@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
@@ -16,7 +17,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.3",
     "nodemailer": "^8.0.1",
+    "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
+    "speakeasy": "^2.0.0",
     "stripe": "^20.4.0"
   },
   "devDependencies": {

@@ -2,54 +2,43 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
-  name: String,
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
 
   email: { 
     type: String, 
-    unique: true 
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
   },
 
-  password: String,
+  password: {
+    type: String,
+    required: true
+  },
 
   role: { 
     type: String, 
-    default: "user" 
+    default: "user",
+    enum: ["user", "admin"]
   },
-
-  // 🔐 ADD THESE TWO FIELDS
-  resetToken: String,
-  resetTokenExpire: Date
 
 }, { timestamps: true });
 
-
-// ✅ Password Hashing (Mongoose 7+ Safe)
+// ===== PASSWORD HASHING =====
 userSchema.pre("save", async function () {
-
   if (!this.isModified("password")) return;
-
   this.password = await bcrypt.hash(this.password, 10);
-
 });
 
-
-// ✅ Compare Password
-userSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
+// ===== COMPARE PASSWORD =====
+userSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
 };
 
-// ✅ FIXED FOR MONGOOSE 7+
-userSchema.pre("save", async function () {
-
-  if (!this.isModified("password")) return;
-
-  this.password = await bcrypt.hash(this.password, 10);
-
-});
-
-userSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
-
-};
-
+// ===== EXPORT MODEL =====
 export default mongoose.model("User", userSchema);
