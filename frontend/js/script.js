@@ -154,7 +154,7 @@ async function submitFeedback() {
 
 // ================= PAYMENTS =================
 async function makePayment() {
-     if (!jwtToken) {  // <-- Add this check at the very start
+    if (!jwtToken) {
         alert("Please login to continue!");
         showSection("login");
         return;
@@ -201,7 +201,7 @@ async function makePayment() {
 }
 
 async function autoPayment() {
-     if (!jwtToken) {
+    if (!jwtToken) {
         alert("Please login to continue!");
         showSection("login");
         return;
@@ -209,6 +209,7 @@ async function autoPayment() {
 
     const msg = document.getElementById("payMsg");
     msg.innerText = "";
+
     try {
         const res = await axios.post(`${PAYMENT_URL}/auto`, {}, {
             headers: { Authorization: `Bearer ${jwtToken}` }
@@ -225,7 +226,7 @@ async function autoPayment() {
 
 // ================= PROFILE =================
 async function loadProfileData() {
-     if (!jwtToken) {
+    if (!jwtToken) {
         alert("Please login to continue!");
         showSection("login");
         return;
@@ -257,7 +258,7 @@ async function loadProfileData() {
 
 // ================= ADMIN =================
 async function loadAdminReport() {
-     if (!jwtToken) {
+    if (!jwtToken) {
         alert("Please login to continue!");
         showSection("login");
         return;
@@ -276,6 +277,10 @@ async function loadAdminReport() {
     }
 }
 
+// Wrapper function for HTML onclick
+function loadAdmin() { loadAdminReport(); }
+function loadProfile() { loadProfileData(); }
+
 // ================= EXPENSE =================
 async function addExpense() {
     const amt = Number(document.getElementById("expenseAmount").value);
@@ -286,6 +291,3 @@ async function addExpense() {
     alert(`Expense ₹${amt} added!`);
     document.getElementById("expenseAmount").value = "";
 }
-
-// ================= EMPTY FUNCTIONS TO REMOVE OLD ERRORS =================
-function loadAdmin() { loadAdminReport(); }
