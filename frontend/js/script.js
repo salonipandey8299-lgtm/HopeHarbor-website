@@ -96,6 +96,15 @@ async function login() {
         msg.innerText = err.response?.data?.message || "Invalid credentials!";
     }
 }
+// ================= PAYMENT =================
+function makePayment() {
+    alert("Payment feature coming soon!");
+}
+
+// ================= PROFILE =================
+function loadProfile() {
+    alert("Profile page coming soon!");
+}
 
 // ================= LOGOUT =================
 function logout() {
