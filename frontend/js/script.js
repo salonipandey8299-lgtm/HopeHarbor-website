@@ -154,6 +154,12 @@ async function submitFeedback() {
 
 // ================= PAYMENTS =================
 async function makePayment() {
+     if (!jwtToken) {  // <-- Add this check at the very start
+        alert("Please login to continue!");
+        showSection("login");
+        return;
+    }
+
     const amount = Number(document.getElementById("amount").value);
     const category = document.getElementById("category").value;
     const msg = document.getElementById("payMsg");
@@ -195,6 +201,12 @@ async function makePayment() {
 }
 
 async function autoPayment() {
+     if (!jwtToken) {
+        alert("Please login to continue!");
+        showSection("login");
+        return;
+    }
+
     const msg = document.getElementById("payMsg");
     msg.innerText = "";
     try {
@@ -213,6 +225,12 @@ async function autoPayment() {
 
 // ================= PROFILE =================
 async function loadProfileData() {
+     if (!jwtToken) {
+        alert("Please login to continue!");
+        showSection("login");
+        return;
+    }
+
     try {
         const res = await axios.get(`${PAYMENT_URL}/history`, {
             headers: { Authorization: `Bearer ${jwtToken}` }
@@ -239,6 +257,12 @@ async function loadProfileData() {
 
 // ================= ADMIN =================
 async function loadAdminReport() {
+     if (!jwtToken) {
+        alert("Please login to continue!");
+        showSection("login");
+        return;
+    }
+
     try {
         const res = await axios.get(`${PAYMENT_URL}/report`, {
             headers: { Authorization: `Bearer ${jwtToken}` }

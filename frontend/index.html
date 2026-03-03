@@ -34,8 +34,8 @@
             <a onclick="showSection('register')">Register</a>
             <a onclick="showSection('login')">Login</a>
             <a onclick="showSection('payment')">Payment</a>
-            <a onclick="loadProfile()">Profile</a>
-            <a onclick="loadAdmin()">Admin</a>
+            <a href="javascript:void(0);" onclick="showSection('profile'); loadProfileData()">Profile</a>
+           <a href="javascript:void(0);" onclick="showSection('admin'); loadAdminReport()">Admin</a>
             <a onclick="logout()">Logout</a>
 
         </div>
@@ -447,7 +447,7 @@ We believe that even the smallest act of kindness can create a powerful ripple e
       <ul>
         <li><a href="#home">Home</a></li>
         <li><a href="#about">About Us</a></li>
-        <li><a href="javascript:void(0);" onclick="toggleFeedback()">Feedback</a></li>
+        <li><a href="javascript:void(0);" onclick="toggleFeedback(); loadFeedback()">Feedback</a></li>
       </ul>
     </div>
 
