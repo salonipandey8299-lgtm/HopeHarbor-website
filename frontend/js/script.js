@@ -1,7 +1,7 @@
 // ================= API CONFIG =================
 const BASE_URL = "https://hopeharbor-website.onrender.com/api";
-const FEEDBACK_URL = `${BASE_URL}/feedback`;
-const PAYMENT_URL = `${BASE_URL}/payment`;
+const FEEDBACK_URL = BASE_URL + "/feedback";
+const PAYMENT_URL = BASE_URL + "/payment";
 
 let jwtToken = localStorage.getItem("jwtToken") || null;
 
@@ -18,6 +18,16 @@ function toggleMenu() {
     document.getElementById("navLinks").classList.toggle("show");
 }
 
+// ================= HELPER: AUTH HEADERS =================
+function authHeaders() {
+    if (!jwtToken) {
+        alert("Please login to continue!");
+        showSection("login");
+        throw new Error("Unauthorized: No token");
+    }
+    return { Authorization: `Bearer ${jwtToken}` };
+}
+
 // ================= DEFAULT PAGE LOAD =================
 document.addEventListener("DOMContentLoaded", () => {
     showSection("home");
@@ -27,11 +37,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadFeedback();
 
-    // Reset form fields
-    ["regName", "regEmail", "regPass", "logEmail", "logPass"].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.value = "";
-    });
+    ["regName", "regEmail", "regPass", "logEmail", "logPass"]
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = "";
+        });
 });
 
 // ================= REGISTER =================
@@ -104,9 +114,17 @@ function logout() {
 }
 
 // ================= FEEDBACK =================
-function toggleFeedback() {
-    const section = document.getElementById("feedback");
-    section.classList.toggle("active");
+async function submitFeedback() {
+    const text = document.getElementById("feedbackText").value.trim();
+    if (!text) return alert("Please write some feedback!");
+
+    try {
+        await axios.post(FEEDBACK_URL, { message: text, name: "Anonymous" });
+        document.getElementById("feedbackText").value = "";
+        loadFeedback();
+    } catch (err) {
+        console.error("Feedback error:", err);
+    }
 }
 
 async function loadFeedback() {
@@ -114,16 +132,10 @@ async function loadFeedback() {
         const res = await axios.get(FEEDBACK_URL);
         const container = document.getElementById("feedbackList");
         container.innerHTML = "";
-
-        if (!Array.isArray(res.data)) return;
-
-        res.data.forEach(fb => {
+        res.data.forEach(f => {
             const div = document.createElement("div");
             div.className = "card p-2 mb-2";
-            div.innerHTML = `
-                <h6>${fb.name || "Anonymous"}</h6>
-                <p>${fb.message}</p>
-            `;
+            div.innerHTML = `<h6>${f.name}</h6><p>${f.message}</p>`;
             container.appendChild(div);
         });
     } catch (err) {
@@ -131,49 +143,26 @@ async function loadFeedback() {
     }
 }
 
-async function submitFeedback() {
-    const textarea = document.getElementById("feedbackText");
-    const message = textarea.value.trim();
-    if (!message) {
-        alert("Please write your feedback before submitting.");
-        return;
-    }
-
-    try {
-        await axios.post(FEEDBACK_URL, { message }, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
-        });
-        alert("Feedback submitted successfully!");
-        textarea.value = "";
-        loadFeedback();
-    } catch (err) {
-        console.error("Error submitting feedback:", err);
-        alert(err.response?.data?.message || "Failed to submit feedback.");
-    }
+function toggleFeedback() {
+    showSection("feedback");
 }
 
 // ================= PAYMENTS =================
 async function makePayment() {
-    if (!jwtToken) {
-        alert("Please login to continue!");
-        showSection("login");
-        return;
-    }
-
-    const amount = Number(document.getElementById("amount").value);
-    const category = document.getElementById("category").value;
-    const msg = document.getElementById("payMsg");
-    msg.innerText = "";
-
-    if (!amount || amount <= 0) {
-        msg.style.color = "orange";
-        msg.innerText = "Enter a valid amount";
-        return;
-    }
-
     try {
+        const amount = Number(document.getElementById("amount").value);
+        const category = document.getElementById("category").value;
+        const msg = document.getElementById("payMsg");
+        msg.innerText = "";
+
+        if (!amount || amount <= 0) {
+            msg.style.color = "orange";
+            msg.innerText = "Enter a valid amount";
+            return;
+        }
+
         const res = await axios.post(`${PAYMENT_URL}/single`, { amount, category }, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
+            headers: authHeaders()
         });
 
         const { orderId, key, currency } = res.data;
@@ -195,47 +184,28 @@ async function makePayment() {
 
     } catch (err) {
         console.error("Payment error:", err);
-        msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Payment failed";
+        document.getElementById("payMsg").style.color = "red";
+        document.getElementById("payMsg").innerText = err.response?.data?.message || "Payment failed";
     }
 }
 
 async function autoPayment() {
-    if (!jwtToken) {
-        alert("Please login to continue!");
-        showSection("login");
-        return;
-    }
-
-    const msg = document.getElementById("payMsg");
-    msg.innerText = "";
-
     try {
-        const res = await axios.post(`${PAYMENT_URL}/auto`, {}, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
-        });
-        msg.style.color = "green";
-        msg.innerText = res.data.message;
+        const res = await axios.post(`${PAYMENT_URL}/auto`, {}, { headers: authHeaders() });
+        document.getElementById("payMsg").style.color = "green";
+        document.getElementById("payMsg").innerText = res.data.message;
         loadProfileData();
     } catch (err) {
         console.error("Auto payment error:", err);
-        msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Auto payment failed";
+        document.getElementById("payMsg").style.color = "red";
+        document.getElementById("payMsg").innerText = err.response?.data?.message || "Auto payment failed";
     }
 }
 
 // ================= PROFILE =================
 async function loadProfileData() {
-    if (!jwtToken) {
-        alert("Please login to continue!");
-        showSection("login");
-        return;
-    }
-
     try {
-        const res = await axios.get(`${PAYMENT_URL}/history`, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
-        });
+        const res = await axios.get(`${PAYMENT_URL}/history`, { headers: authHeaders() });
 
         const historyContainer = document.getElementById("historyData");
         const totalContainer = document.getElementById("userTotalAmount");
@@ -258,17 +228,8 @@ async function loadProfileData() {
 
 // ================= ADMIN =================
 async function loadAdminReport() {
-    if (!jwtToken) {
-        alert("Please login to continue!");
-        showSection("login");
-        return;
-    }
-
     try {
-        const res = await axios.get(`${PAYMENT_URL}/report`, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
-        });
-
+        const res = await axios.get(`${PAYMENT_URL}/report`, { headers: authHeaders() });
         document.getElementById("totalPayments").innerText = `₹${res.data.totalCollection}`;
         document.getElementById("zakatData").innerText = `₹${res.data.zakatCollection}`;
         document.getElementById("dailyMonthlyData").innerText = `₹${res.data.generalCollection}`;
@@ -277,17 +238,12 @@ async function loadAdminReport() {
     }
 }
 
-// Wrapper function for HTML onclick
 function loadAdmin() { loadAdminReport(); }
-function loadProfile() { loadProfileData(); }
 
 // ================= EXPENSE =================
 async function addExpense() {
     const amt = Number(document.getElementById("expenseAmount").value);
-    if (!amt || amt <= 0) {
-        alert("Enter valid expense amount");
-        return;
-    }
+    if (!amt || amt <= 0) return alert("Enter valid expense amount");
     alert(`Expense ₹${amt} added!`);
     document.getElementById("expenseAmount").value = "";
 }
