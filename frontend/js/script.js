@@ -1,5 +1,5 @@
 // ================= API CONFIG =================
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = "https://hopeharbor-website.onrender.com/api";
 const FEEDBACK_URL = BASE_URL + "/feedback";
 
 let jwtToken = localStorage.getItem("jwtToken") || null;
