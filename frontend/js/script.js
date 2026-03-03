@@ -1,6 +1,5 @@
 // ================= API CONFIG =================
-const BASE_URL = "https://hopeharbor-website.onrender.com/api";
-const FEEDBACK_URL = BASE_URL + "/feedback";
+const BASE_URL = "https://hopeharbor-website.onrender.com/api/feedback";
 
 let jwtToken = localStorage.getItem("jwtToken") || null;
 
@@ -109,10 +108,21 @@ function logout() {
 async function loadFeedback() {
     try {
         const response = await fetch(FEEDBACK_URL);
+
+        if (!response.ok) {
+            console.error("Server error:", response.status);
+            return;
+        }
+
         const data = await response.json();
 
         const feedbackContainer = document.getElementById("feedbackList");
         feedbackContainer.innerHTML = "";
+
+        if (!Array.isArray(data)) {
+            console.error("Feedback is not array:", data);
+            return;
+        }
 
         data.forEach(item => {
             const div = document.createElement("div");
