@@ -148,6 +148,7 @@ function toggleFeedback() {
 }
 
 // ================= PAYMENTS =================
+// ================= PAYMENTS =================
 async function makePayment() {
     try {
         const amount = Number(document.getElementById("amount").value);
@@ -161,11 +162,14 @@ async function makePayment() {
             return;
         }
 
-        const res = await axios.post(`${PAYMENT_URL}/single`, { amount, category }, {
-            headers: authHeaders()
-        });
+        // 1️⃣ Create Order From Backend
+        const res = await axios.post(`${PAYMENT_URL}/single`,
+            { amount, category },
+            { headers: authHeaders() }
+        );
 
         const { orderId, key, currency } = res.data;
+
         const options = {
             key,
             order_id: orderId,
@@ -173,35 +177,72 @@ async function makePayment() {
             amount: amount * 100,
             name: "HopeHarbor Donation",
             description: `Donation for ${category}`,
-            handler: function (response) {
-                msg.style.color = "green";
-                msg.innerText = `Payment successful! Payment ID: ${response.razorpay_payment_id}`;
-                loadProfileData();
+
+            handler: async function (response) {
+
+                try {
+                    // 2️⃣ VERIFY PAYMENT FROM BACKEND
+                    const verifyRes = await axios.post(`${PAYMENT_URL}/verify`, {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount,
+                        category
+                    }, {
+                        headers: authHeaders()
+                    });
+
+                    if (verifyRes.data.success) {
+                        msg.style.color = "green";
+                        msg.innerText = "Payment successful and verified ✅";
+                        loadProfileData();
+                    } else {
+                        msg.style.color = "red";
+                        msg.innerText = "Payment verification failed ❌";
+                    }
+
+                } catch (verifyError) {
+                    msg.style.color = "red";
+                    msg.innerText = "Verification error ❌";
+                    console.error("Verification error:", verifyError);
+                }
             },
+
+            modal: {
+                ondismiss: function () {
+                    msg.style.color = "orange";
+                    msg.innerText = "Payment cancelled";
+                }
+            }
         };
+
         const rzp = new Razorpay(options);
         rzp.open();
 
     } catch (err) {
         console.error("Payment error:", err);
-        document.getElementById("payMsg").style.color = "red";
-        document.getElementById("payMsg").innerText = err.response?.data?.message || "Payment failed";
+        const msg = document.getElementById("payMsg");
+        msg.style.color = "red";
+        msg.innerText = err.response?.data?.message || "Payment failed";
     }
 }
-
 async function autoPayment() {
     try {
-        const res = await axios.post(`${PAYMENT_URL}/auto`, {}, { headers: authHeaders() });
+        const res = await axios.post(`${PAYMENT_URL}/auto`, {}, {
+            headers: authHeaders()
+        });
+
         document.getElementById("payMsg").style.color = "green";
         document.getElementById("payMsg").innerText = res.data.message;
         loadProfileData();
+
     } catch (err) {
         console.error("Auto payment error:", err);
         document.getElementById("payMsg").style.color = "red";
-        document.getElementById("payMsg").innerText = err.response?.data?.message || "Auto payment failed";
+        document.getElementById("payMsg").innerText =
+            err.response?.data?.message || "Auto payment failed";
     }
 }
-
 // ================= PROFILE =================
 async function loadProfileData() {
     try {
