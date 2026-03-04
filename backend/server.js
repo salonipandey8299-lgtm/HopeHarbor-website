@@ -13,8 +13,19 @@ dotenv.config();
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+  "https://hopeharbor-website.onrender.com",
+  "https://hopeharbor-website-1.onrender.com"
+];
+
 app.use(cors({
-  origin: "https://hopeharbor-website.onrender.com",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
