@@ -75,8 +75,8 @@ async function login() {
         const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
         const data = res.data;
 
-        jwtToken = data.token;
-        userRole = data.user.role;
+        jwtToken = res.data.token;
+        userRole = res.data.user.role;
 
         localStorage.setItem("jwtToken", jwtToken);
         localStorage.setItem("role", userRole);
@@ -90,6 +90,7 @@ async function login() {
 
         showSection("home");
     } catch (err) {
+        console.log(err.response?.data);
         msg.style.color = "red";
         msg.innerText = err.response?.data?.message || "Login failed";
     }
