@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const feedbackSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    default: "Anonymous"
+  },
   message: {
     type: String,
     required: true
@@ -13,4 +17,4 @@ const feedbackSchema = new mongoose.Schema({
 
 const Feedback = mongoose.model("Feedback", feedbackSchema);
 
-export default Feedback;   // 👈 THIS LINE IS IMPORTANT
+export default Feedback;

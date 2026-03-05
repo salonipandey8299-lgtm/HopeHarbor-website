@@ -4,53 +4,55 @@ const FEEDBACK_URL = BASE_URL + "/feedback";
 const PAYMENT_URL = BASE_URL + "/payment";
 
 let jwtToken = localStorage.getItem("jwtToken") || null;
+let userRole = localStorage.getItem("role") || null;
 
-// ================= SPA SECTION NAVIGATION =================
+
+// ================= SPA NAVIGATION =================
 function showSection(id) {
-    document.querySelectorAll(".spa-section").forEach(sec => sec.classList.remove("active"));
+    document.querySelectorAll(".spa-section")
+        .forEach(sec => sec.classList.remove("active"));
+
     const section = document.getElementById(id);
     if (section) section.classList.add("active");
-
-    document.querySelectorAll("nav.spa-nav a").forEach(link => link.classList.remove("active"));
 }
 
 function toggleMenu() {
     document.getElementById("navLinks").classList.toggle("show");
 }
 
-// ================= HELPER: AUTH HEADERS =================
+
+// ================= AUTH HEADER =================
 function authHeaders() {
     if (!jwtToken) {
-        alert("Please login to continue!");
+        alert("Please login first!");
         showSection("login");
-        throw new Error("Unauthorized: No token");
+        throw new Error("No token found");
     }
     return { Authorization: `Bearer ${jwtToken}` };
 }
 
-// ================= DEFAULT PAGE LOAD =================
+
+// ================= PAGE LOAD =================
 document.addEventListener("DOMContentLoaded", () => {
     showSection("home");
-
-    const totalMembers = document.getElementById("total-members");
-    if (totalMembers) totalMembers.innerText = 150;
-
     loadFeedback();
 
-    ["regName", "regEmail", "regPass", "logEmail", "logPass"]
-        .forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.value = "";
-        });
+    const adminNav = document.getElementById("adminNav");
+    if (adminNav) adminNav.style.display = "none";
+
+    // ✅ Show admin if role exists
+    if (userRole === "admin" && adminNav) {
+        adminNav.style.display = "inline-block";
+    }
 });
+
 
 // ================= REGISTER =================
 async function register() {
-    const name = document.getElementById("regName").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
-    const password = document.getElementById("regPass").value.trim();
-    const msg = document.getElementById("regMsg");
-    msg.innerText = "";
+    const name = regName.value.trim();
+    const email = regEmail.value.trim();
+    const password = regPass.value.trim();
+    const msg = regMsg;
 
     if (!name || !email || !password) {
         msg.style.color = "orange";
@@ -61,28 +63,26 @@ async function register() {
     try {
         await axios.post(`${BASE_URL}/auth/register`, { name, email, password });
 
-        msg.style.color = "lightgreen";
-        msg.innerText = "Registered successfully! Please login.";
-
-        ["regName", "regEmail", "regPass"].forEach(id => document.getElementById(id).value = "");
+        msg.style.color = "green";
+        msg.innerText = "Registered! Please login.";
         setTimeout(() => showSection("login"), 1000);
 
     } catch (err) {
         msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Registration failed!";
+        msg.innerText = err.response?.data?.message || "Registration failed";
     }
 }
 
+
 // ================= LOGIN =================
 async function login() {
-    const email = document.getElementById("logEmail").value.trim();
-    const password = document.getElementById("logPass").value.trim();
-    const msg = document.getElementById("logMsg");
-    msg.innerText = "";
+    const email = logEmail.value.trim();
+    const password = logPass.value.trim();
+    const msg = logMsg;
 
     if (!email || !password) {
         msg.style.color = "orange";
-        msg.innerText = "Please fill all fields!";
+        msg.innerText = "Fill all fields!";
         return;
     }
 
@@ -90,160 +90,200 @@ async function login() {
         const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
 
         jwtToken = res.data.token;
+        userRole = res.data.user.role;
+
         localStorage.setItem("jwtToken", jwtToken);
+        localStorage.setItem("role", userRole);
 
-        msg.style.color = "lightgreen";
+        if (userRole === "admin") {
+            document.getElementById("adminNav").style.display = "inline-block";
+        }
+
+        msg.style.color = "green";
         msg.innerText = "Login successful!";
-
-        ["logEmail", "logPass"].forEach(id => document.getElementById(id).value = "");
         setTimeout(() => showSection("home"), 1000);
 
     } catch (err) {
         msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Invalid credentials!";
+        msg.innerText = err.response?.data?.message || "Invalid credentials";
     }
 }
 
+
 // ================= LOGOUT =================
 function logout() {
-    jwtToken = "";
+    jwtToken = null;
+    userRole = null;
+
     localStorage.removeItem("jwtToken");
-    ["logEmail","logPass"].forEach(id => document.getElementById(id).value = "");
+    localStorage.removeItem("role");
+
+    const adminNav = document.getElementById("adminNav");
+    if (adminNav) adminNav.style.display = "none";
+
     alert("Logged out successfully!");
     showSection("home");
 }
 
+
 // ================= FEEDBACK =================
 async function submitFeedback() {
-    const text = document.getElementById("feedbackText").value.trim();
-    if (!text) return alert("Please write some feedback!");
+    const text = feedbackText.value.trim();
+    if (!text) return alert("Write feedback first!");
 
     try {
-        await axios.post(FEEDBACK_URL, { message: text, name: "Anonymous" });
-        document.getElementById("feedbackText").value = "";
+        const userRes = await axios.get(`${BASE_URL}/auth/me`, {
+            headers: authHeaders()
+        });
+
+        await axios.post(FEEDBACK_URL, {
+            message: text,
+            name: userRes.data.name
+        });
+
+        feedbackText.value = "";
         loadFeedback();
+
     } catch (err) {
-        console.error("Feedback error:", err);
+        console.error(err);
     }
 }
 
-async function loadFeedback() {
+async function loadAdminFeedback() {
     try {
         const res = await axios.get(FEEDBACK_URL);
-        const container = document.getElementById("feedbackList");
+
+        const container = document.getElementById("adminFeedbackList");
         container.innerHTML = "";
+
         res.data.forEach(f => {
-            const div = document.createElement("div");
-            div.className = "card p-2 mb-2";
-            div.innerHTML = `<h6>${f.name}</h6><p>${f.message}</p>`;
-            container.appendChild(div);
+            container.innerHTML += `
+                <div class="card p-2 mb-2">
+                    <strong>${f.name}</strong>
+                    <p>${f.message}</p>
+                    <small>${new Date(f.date).toLocaleString()}</small>
+                </div>`;
         });
+
     } catch (err) {
-        console.error("Error loading feedback:", err);
+        console.error("Admin feedback error:", err);
     }
 }
 
-function toggleFeedback() {
-    showSection("feedback");
-}
-
-// ================= PAYMENTS =================
+// ================= PAYMENT =================
 async function makePayment() {
     try {
         const amount = Number(document.getElementById("amount").value);
         const category = document.getElementById("category").value;
         const msg = document.getElementById("payMsg");
-        msg.innerText = "";
 
         if (!amount || amount <= 0) {
             msg.style.color = "orange";
-            msg.innerText = "Enter a valid amount";
+            msg.innerText = "Enter valid amount";
             return;
         }
 
-        const res = await axios.post(`${PAYMENT_URL}/single`, { amount, category }, {
-            headers: authHeaders()
-        });
+        const res = await axios.post(`${PAYMENT_URL}/single`,
+            { amount, category },
+            { headers: authHeaders() }
+        );
 
-        const { orderId, key, currency } = res.data;
+        const { orderId, key } = res.data;
+
         const options = {
             key,
             order_id: orderId,
-            currency,
             amount: amount * 100,
+            currency: "INR",
             name: "HopeHarbor Donation",
             description: `Donation for ${category}`,
-            handler: function (response) {
+
+            handler: async function (response) {
+
+                await axios.post(`${PAYMENT_URL}/verify`, {
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    amount,
+                    category
+                }, { headers: authHeaders() });
+
                 msg.style.color = "green";
-                msg.innerText = `Payment successful! Payment ID: ${response.razorpay_payment_id}`;
+                msg.innerText = "Payment successful!";
                 loadProfileData();
-            },
+            }
         };
-        const rzp = new Razorpay(options);
-        rzp.open();
+
+        new Razorpay(options).open();
 
     } catch (err) {
-        console.error("Payment error:", err);
-        document.getElementById("payMsg").style.color = "red";
-        document.getElementById("payMsg").innerText = err.response?.data?.message || "Payment failed";
+        payMsg.style.color = "red";
+        payMsg.innerText = "Payment failed";
     }
 }
 
-async function autoPayment() {
-    try {
-        const res = await axios.post(`${PAYMENT_URL}/auto`, {}, { headers: authHeaders() });
-        document.getElementById("payMsg").style.color = "green";
-        document.getElementById("payMsg").innerText = res.data.message;
-        loadProfileData();
-    } catch (err) {
-        console.error("Auto payment error:", err);
-        document.getElementById("payMsg").style.color = "red";
-        document.getElementById("payMsg").innerText = err.response?.data?.message || "Auto payment failed";
-    }
-}
 
 // ================= PROFILE =================
 async function loadProfileData() {
     try {
-        const res = await axios.get(`${PAYMENT_URL}/history`, { headers: authHeaders() });
+        const userRes = await axios.get(`${BASE_URL}/auth/me`,
+            { headers: authHeaders() });
 
-        const historyContainer = document.getElementById("historyData");
-        const totalContainer = document.getElementById("userTotalAmount");
-        historyContainer.innerHTML = "";
+        profileName.innerText = userRes.data.name;
+
+        const savedPhoto = localStorage.getItem("profilePhoto");
+        if (savedPhoto) profileImage.src = savedPhoto;
+
+        const payRes = await axios.get(`${PAYMENT_URL}/history`,
+            { headers: authHeaders() });
+
+        historyData.innerHTML = "";
         let total = 0;
 
-        res.data.forEach(p => {
+        if (!Array.isArray(payRes.data) || payRes.data.length === 0) {
+            historyData.innerHTML = "<p>No payments yet.</p>";
+            userTotalAmount.innerText = "₹0";
+            return;
+        }
+
+        payRes.data.forEach(p => {
             total += p.amount;
-            const div = document.createElement("div");
-            div.className = "card p-2 mb-2";
-            div.innerHTML = `<strong>₹${p.amount}</strong> - ${p.category} - ${new Date(p.date).toLocaleString()}`;
-            historyContainer.appendChild(div);
+            historyData.innerHTML += `
+                <div class="card p-2 mb-2">
+                    <strong>₹${p.amount}</strong>
+                    - ${p.category}
+                    - ${new Date(p.date).toLocaleString()}
+                </div>`;
         });
 
-        totalContainer.innerText = `₹${total}`;
+        userTotalAmount.innerText = `₹${total}`;
+
     } catch (err) {
         console.error("Profile load error:", err);
     }
 }
 
+
 // ================= ADMIN =================
+function loadAdmin() {
+    if (userRole !== "admin") {
+        alert("Access denied!");
+        showSection("home");
+        return;
+    }
+    loadAdminReport();
+}
+
 async function loadAdminReport() {
     try {
-        const res = await axios.get(`${PAYMENT_URL}/report`, { headers: authHeaders() });
-        document.getElementById("totalPayments").innerText = `₹${res.data.totalCollection}`;
-        document.getElementById("zakatData").innerText = `₹${res.data.zakatCollection}`;
-        document.getElementById("dailyMonthlyData").innerText = `₹${res.data.generalCollection}`;
+        const res = await axios.get(`${PAYMENT_URL}/report`,
+            { headers: authHeaders() });
+
+        totalPayments.innerText = `₹${res.data.totalCollection}`;
+        zakatData.innerText = `₹${res.data.zakatCollection}`;
+        dailyMonthlyData.innerText = `₹${res.data.generalCollection}`;
+
     } catch (err) {
         console.error("Admin report error:", err);
     }
-}
-
-function loadAdmin() { loadAdminReport(); }
-
-// ================= EXPENSE =================
-async function addExpense() {
-    const amt = Number(document.getElementById("expenseAmount").value);
-    if (!amt || amt <= 0) return alert("Enter valid expense amount");
-    alert(`Expense ₹${amt} added!`);
-    document.getElementById("expenseAmount").value = "";
 }

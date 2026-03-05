@@ -36,8 +36,6 @@
             <a onclick="showSection('payment')">Payment</a>
             <a href="javascript:void(0);" onclick="showSection('profile'); loadProfileData()">Profile</a>
            <a href="javascript:void(0);" onclick="showSection('admin'); loadAdminReport()">Admin</a>
-            <a onclick="logout()">Logout</a>
-
         </div>
     </div>
 </nav>
@@ -375,14 +373,32 @@ We believe that even the smallest act of kindness can create a powerful ripple e
 <section id="profile" class="spa-section">
 <h2 class="text-center">User Profile</h2>
 
-<div class="container my-4">
-<div id="profileData"></div>
+<div class="container my-4 text-center">
 
-<h4 class="mt-4">Total Payments</h4>
-<h5 id="userTotalAmount"></h5>
+    <!-- Profile Photo -->
+    <img id="profileImage" src="images/default.png" 
+         class="rounded-circle mb-3" width="120" height="120">
 
-<h4 class="mt-4">Payment History (Date Wise)</h4>
-<div id="historyData"></div>
+    <br>
+    <input type="file" id="photoUpload" accept="image/*" 
+           class="form-control w-50 mx-auto mb-3"
+           onchange="uploadPhoto()">
+
+    <!-- Username -->
+    <h4 id="profileName"></h4>
+
+    <button class="btn btn-danger mt-3" onclick="logout()">
+        Logout
+    </button>
+
+    <hr>
+
+    <h4>Total Payments</h4>
+    <h5 id="userTotalAmount"></h5>
+
+    <h4 class="mt-4">Payment History</h4>
+    <div id="historyData"></div>
+
 </div>
 </section>
 
@@ -405,6 +421,10 @@ We believe that even the smallest act of kindness can create a powerful ripple e
 <div class="card p-3 mb-3">
 <h5>Zakat Payments</h5>
 <div id="zakatData"></div>
+</div>
+<div class="card p-3 mb-3">
+<h5>Feedback</h5>
+<div id="adminFeedbackList"></div>
 </div>
 
 <div class="card p-3">
