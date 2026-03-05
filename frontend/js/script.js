@@ -35,7 +35,7 @@ function authHeaders() {
 // ================= PAGE LOAD =================
 document.addEventListener("DOMContentLoaded", () => {
     showSection("home");
-    loadFeedback();
+    loadAdminFeedback();
 
     const adminNav = document.getElementById("adminNav");
     if (adminNav) adminNav.style.display = "none";
@@ -95,9 +95,8 @@ async function login() {
 
         const data = res.data;
 
-        // token save
         jwtToken = data.token;
-        userRole = data.user.role;
+        userRole = data.role;
 
         localStorage.setItem("jwtToken", jwtToken);
         localStorage.setItem("role", userRole);
@@ -113,13 +112,10 @@ async function login() {
 
     } catch (err) {
 
-        console.error(err.response?.data);
-
         msg.style.color = "red";
         msg.innerText = err.response?.data?.message || "Login failed";
     }
 }
-
 // ================= LOGOUT =================
 function logout() {
 
