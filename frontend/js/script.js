@@ -43,15 +43,19 @@ async function register() {
     const msg = document.getElementById("regMsg");
 
     if (!name || !email || !password) {
-        msg.style.color = "orange"; msg.innerText = "Please fill all fields!"; return;
+        msg.style.color = "orange";
+        msg.innerText = "Please fill all fields!";
+        return;
     }
 
     try {
-        await axios.post(`${BASE_URL}/auth/register`, { name, email, password });
-        msg.style.color = "green"; msg.innerText = "Registered! Please login.";
+        const res = await axios.post(`${BASE_URL}/auth/register`, { name, email, password });
+        msg.style.color = "green";
+        msg.innerText = res.data.message || "Registered! Please login.";
         setTimeout(() => showSection("login"), 1000);
     } catch (err) {
-        msg.style.color = "red"; msg.innerText = err.response?.data?.message || "Registration failed";
+        msg.style.color = "red";
+        msg.innerText = err.response?.data?.message || "Registration failed";
     }
 }
 
@@ -61,7 +65,11 @@ async function login() {
     const password = document.getElementById("logPass").value.trim();
     const msg = document.getElementById("logMsg");
 
-    if (!email || !password) { msg.style.color = "orange"; msg.innerText = "Please fill all fields!"; return; }
+    if (!email || !password) {
+        msg.style.color = "orange";
+        msg.innerText = "Please fill all fields!";
+        return;
+    }
 
     try {
         const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
@@ -73,22 +81,29 @@ async function login() {
         localStorage.setItem("jwtToken", jwtToken);
         localStorage.setItem("role", userRole);
 
-        msg.style.color = "green"; msg.innerText = "Login successful!";
-        if (userRole === "admin") { document.getElementById("adminNav").style.display = "inline-block"; }
+        msg.style.color = "green";
+        msg.innerText = "Login successful!";
+
+        if (userRole === "admin") {
+            document.getElementById("adminNav").style.display = "inline-block";
+        }
 
         showSection("home");
     } catch (err) {
-        msg.style.color = "red"; msg.innerText = err.response?.data?.message || "Login failed";
+        msg.style.color = "red";
+        msg.innerText = err.response?.data?.message || "Login failed";
     }
 }
 
 // ================= LOGOUT =================
 function logout() {
-    jwtToken = null; userRole = null;
+    jwtToken = null;
+    userRole = null;
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("role");
     document.getElementById("adminNav").style.display = "none";
-    alert("Logged out!"); showSection("home");
+    alert("Logged out!");
+    showSection("home");
 }
 
 // ================= PROFILE =================
@@ -99,7 +114,6 @@ async function loadProfileData() {
         const user = res.data;
         document.getElementById("profileName").innerText = user.name;
         document.getElementById("profileImage").src = user.avatar || "images/man1.png";
-        // Load payments if needed
     } catch (err) { console.error("Profile load error:", err); }
 }
 
@@ -144,10 +158,56 @@ async function loadFeedback() {
     } catch (err) { console.error(err); }
 }
 
+// ================= PAYMENT =================
+async function makePayment() {
+    if (!jwtToken) { alert("Login first!"); showSection("login"); return; }
+
+    const amount = parseInt(prompt("Enter amount in ₹:"));
+    if (!amount || amount <= 0) { alert("Invalid amount!"); return; }
+
+    try {
+        // 1️⃣ Create Razorpay order
+        const orderRes = await axios.post(`${PAYMENT_URL}/single`, { amount, category: "general" }, { headers: authHeaders() });
+
+        const options = {
+            key: orderRes.data.key,
+            amount: orderRes.data.amount * 100,
+            currency: orderRes.data.currency,
+            name: "HopeHarbor",
+            description: "Donation",
+            order_id: orderRes.data.orderId,
+            handler: async function (response) {
+                // 2️⃣ Verify payment
+                try {
+                    await axios.post(`${PAYMENT_URL}/verify`, {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount,
+                        category: "general"
+                    }, { headers: authHeaders() });
+                    alert("Payment successful!");
+                } catch (err) {
+                    console.error(err);
+                    alert("Payment verification failed!");
+                }
+            },
+            theme: { color: "#00c6ff" }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+    } catch (err) {
+        console.error("Payment error:", err);
+        alert("Payment failed!");
+    }
+}
+
 // ================= ADMIN =================
 async function loadAdmin() {
     if (!userRole || userRole !== "admin") { alert("Access denied!"); showSection("home"); return; }
-    await loadAdminReport(); await loadAdminFeedback();
+    await loadAdminReport(); // Add loadAdminFeedback() if exists
 }
 
 async function loadAdminReport() {
