@@ -1,15 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HopeHarbor</title>
-
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
 </head>
 
 <body>
@@ -17,17 +14,11 @@
 <!-- NAVBAR -->
 <nav class="spa-nav d-flex justify-content-between align-items-center px-3"> 
     <div class="nav-container">
-      <div class="d-flex align-items-center">
-<img src="images/logo2.jpg" class="logo-circle me-2">
-<span class="brand-name">HopeHarbor</span>
-</div>
-
-        <!-- Toggle Button -->
-        <div class="menu-toggle" onclick="toggleMenu()">
-            &#8942;   <!-- Three dots -->
+        <div class="d-flex align-items-center">
+            <img src="images/logo2.jpg" class="logo-circle me-2">
+            <span class="brand-name">HopeHarbor</span>
         </div>
-
-        <!-- Nav Links -->
+        <div class="menu-toggle" onclick="toggleMenu()">&#8942;</div>
         <div class="nav-links" id="navLinks">
             <a onclick="showSection('home')">Home</a>
             <a onclick="showSection('contact')">Contact</a>
@@ -35,7 +26,7 @@
             <a onclick="showSection('login')">Login</a>
             <a onclick="showSection('payment')">Payment</a>
             <a href="javascript:void(0);" onclick="showSection('profile'); loadProfileData()">Profile</a>
-           <a href="javascript:void(0);" onclick="showSection('admin'); loadAdminReport()">Admin</a>
+            <a id="adminNav" href="javascript:void(0);" onclick="showSection('admin'); loadAdmin()">Admin</a>
         </div>
     </div>
 </nav>
@@ -451,17 +442,13 @@ We believe that even the smallest act of kindness can create a powerful ripple e
 </section>
 
 <!-- ================= FOOTER ================= -->
+<!-- FOOTER -->
 <footer class="hope-footer">
   <div class="footer-container">
-
     <div class="footer-box">
       <h3>HopeHarbor</h3>
-      <p>
-        A safe place for giving. We connect generous hearts with verified causes,
-        ensuring every contribution creates real impact.
-      </p>
+      <p>A safe place for giving. We connect generous hearts with verified causes, ensuring every contribution creates real impact.</p>
     </div>
-
     <div class="footer-box">
       <h4>Quick Links</h4>
       <ul>
@@ -470,28 +457,19 @@ We believe that even the smallest act of kindness can create a powerful ripple e
         <li><a href="javascript:void(0);" onclick="toggleFeedback(); loadFeedback()">Feedback</a></li>
       </ul>
     </div>
-
     <div class="footer-box">
       <h4>Contact Us</h4>
       <p>Email: support@hopeharbor.org</p>
-       <p>
-    <a href="tel:+919876543210" style="color:white; text-decoration:none;">
-        Phone +91 9876543210
-    </a>
+      <p><a href="tel:+919876543210" style="color:white; text-decoration:none;">Phone +91 9876543210</a></p>
       <p>Lucknow, India</p>
     </div>
-
   </div>
-
-  <div class="footer-bottom">
-    © 2026 HopeHarbor | All Rights Reserved
-  </div>
+  <div class="footer-bottom">© 2026 HopeHarbor | All Rights Reserved</div>
 </footer>
 
-
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="js/script.js"></script>
 
 </body>

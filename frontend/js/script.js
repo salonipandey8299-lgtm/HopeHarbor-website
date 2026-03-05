@@ -3,15 +3,12 @@ const BASE_URL = "https://hopeharbor-website.onrender.com/api";
 const FEEDBACK_URL = BASE_URL + "/feedback";
 const PAYMENT_URL = BASE_URL + "/payment";
 
-let jwtToken = localStorage.getItem("jwtToken")||null;
-let userRole = localStorage.getItem("role")||null;
-
+let jwtToken = localStorage.getItem("jwtToken") || null;
+let userRole = localStorage.getItem("role") || null;
 
 // ================= SPA NAVIGATION =================
 function showSection(id) {
-    document.querySelectorAll(".spa-section")
-        .forEach(sec => sec.classList.remove("active"));
-
+    document.querySelectorAll(".spa-section").forEach(sec => sec.classList.remove("active"));
     const section = document.getElementById(id);
     if (section) section.classList.add("active");
 }
@@ -21,99 +18,53 @@ function toggleMenu() {
     if (nav) nav.classList.toggle("show");
 }
 
-
 // ================= AUTH HEADER =================
 function authHeaders() {
-
     if (!jwtToken) {
         alert("Please login first!");
         showSection("login");
         throw new Error("No token");
     }
-
-    return {
-        Authorization: `Bearer ${jwtToken}`
-    };
+    return { Authorization: `Bearer ${jwtToken}` };
 }
-
 
 // ================= PAGE LOAD =================
 document.addEventListener("DOMContentLoaded", () => {
-
     showSection("home");
-
     const adminNav = document.getElementById("adminNav");
-
-    if (adminNav) adminNav.style.display = "none";
-
-    if (userRole === "admin" && adminNav) {
-        adminNav.style.display = "inline-block";
-    }
-
+    if (adminNav) adminNav.style.display = userRole === "admin" ? "inline-block" : "none";
 });
-
 
 // ================= REGISTER =================
 async function register() {
-
     const name = document.getElementById("regName").value.trim();
     const email = document.getElementById("regEmail").value.trim();
     const password = document.getElementById("regPass").value.trim();
     const msg = document.getElementById("regMsg");
 
     if (!name || !email || !password) {
-
-        msg.style.color = "orange";
-        msg.innerText = "Please fill all fields!";
-        return;
-
+        msg.style.color = "orange"; msg.innerText = "Please fill all fields!"; return;
     }
 
     try {
-
-        await axios.post(`${BASE_URL}/auth/register`, {
-            name,
-            email,
-            password
-        });
-
-        msg.style.color = "green";
-        msg.innerText = "Registered! Please login.";
-
+        await axios.post(`${BASE_URL}/auth/register`, { name, email, password });
+        msg.style.color = "green"; msg.innerText = "Registered! Please login.";
         setTimeout(() => showSection("login"), 1000);
-
     } catch (err) {
-
-        msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Registration failed";
-
+        msg.style.color = "red"; msg.innerText = err.response?.data?.message || "Registration failed";
     }
-
 }
-
 
 // ================= LOGIN =================
 async function login() {
-
     const email = document.getElementById("logEmail").value.trim();
     const password = document.getElementById("logPass").value.trim();
     const msg = document.getElementById("logMsg");
 
-    if (!email || !password) {
-
-        msg.style.color = "orange";
-        msg.innerText = "Please fill all fields!";
-        return;
-
-    }
+    if (!email || !password) { msg.style.color = "orange"; msg.innerText = "Please fill all fields!"; return; }
 
     try {
-
-        const res = await axios.post(`${BASE_URL}/auth/login`, {
-            email,
-            password
-        });
-
+        const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
         const data = res.data;
 
         jwtToken = data.token;
@@ -122,162 +73,88 @@ async function login() {
         localStorage.setItem("jwtToken", jwtToken);
         localStorage.setItem("role", userRole);
 
-        msg.style.color = "green";
-        msg.innerText = "Login successful!";
-
-        if (userRole === "admin") {
-
-            const adminNav = document.getElementById("adminNav");
-
-            if (adminNav) adminNav.style.display = "inline-block";
-
-        }
+        msg.style.color = "green"; msg.innerText = "Login successful!";
+        if (userRole === "admin") { document.getElementById("adminNav").style.display = "inline-block"; }
 
         showSection("home");
-
     } catch (err) {
-
-        msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Login failed";
-
+        msg.style.color = "red"; msg.innerText = err.response?.data?.message || "Login failed";
     }
-
 }
-
 
 // ================= LOGOUT =================
 function logout() {
-
-    jwtToken = null;
-    userRole = null;
-
+    jwtToken = null; userRole = null;
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("role");
-
-    const adminNav = document.getElementById("adminNav");
-
-    if (adminNav) adminNav.style.display = "none";
-
-    alert("Logged out!");
-    showSection("home");
-
+    document.getElementById("adminNav").style.display = "none";
+    alert("Logged out!"); showSection("home");
 }
 
+// ================= PROFILE =================
+async function loadProfileData() {
+    if (!jwtToken) { showSection("login"); return; }
+    try {
+        const res = await axios.get(`${BASE_URL}/auth/me`, { headers: authHeaders() });
+        const user = res.data;
+        document.getElementById("profileName").innerText = user.name;
+        document.getElementById("profileImage").src = user.avatar || "images/man1.png";
+        // Load payments if needed
+    } catch (err) { console.error("Profile load error:", err); }
+}
+
+function uploadPhoto() {
+    const fileInput = document.getElementById("photoUpload");
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    axios.post(`${BASE_URL}/auth/upload-avatar`, formData, { headers: { ...authHeaders(), "Content-Type": "multipart/form-data" } })
+        .then(res => { alert("Photo uploaded!"); loadProfileData(); })
+        .catch(err => console.error("Upload error:", err));
+}
 
 // ================= FEEDBACK =================
+function toggleFeedback() {
+    const section = document.getElementById("feedback");
+    section.style.display = section.style.display === "block" ? "none" : "block";
+}
+
 async function submitFeedback() {
-
-    const feedbackText = document.getElementById("feedbackText");
-
-    const text = feedbackText.value.trim();
-
-    if (!text) {
-        alert("Write feedback first!");
-        return;
-    }
-
+    const text = document.getElementById("feedbackText").value.trim();
+    if (!text) { alert("Write feedback first!"); return; }
     try {
-
-        const userRes = await axios.get(`${BASE_URL}/auth/me`, {
-            headers: authHeaders()
-        });
-
-        await axios.post(FEEDBACK_URL, {
-
-            name: userRes.data.name,
-            message: text
-
-        });
-
-        feedbackText.value = "";
-
+        const userRes = await axios.get(`${BASE_URL}/auth/me`, { headers: authHeaders() });
+        await axios.post(FEEDBACK_URL, { name: userRes.data.name, message: text });
+        document.getElementById("feedbackText").value = "";
         alert("Feedback submitted!");
-
-    } catch (err) {
-
-        console.error(err);
-
-    }
-
+    } catch (err) { console.error(err); }
 }
 
-
-// ================= ADMIN FEEDBACK =================
-async function loadAdminFeedback() {
-
+async function loadFeedback() {
     try {
-
         const res = await axios.get(FEEDBACK_URL);
-
-        const container = document.getElementById("adminFeedbackList");
-
-        if (!container) return;
-
+        const container = document.getElementById("feedbackList");
         container.innerHTML = "";
-
         res.data.forEach(f => {
-
-            container.innerHTML += `
-            <div class="card p-2 mb-2">
-                <strong>${f.name}</strong>
-                <p>${f.message}</p>
-                <small>${new Date(f.createdAt).toLocaleString()}</small>
-            </div>
-            `;
-
+            container.innerHTML += `<div class="card p-2 mb-2"><strong>${f.name}</strong><p>${f.message}</p><small>${new Date(f.createdAt).toLocaleString()}</small></div>`;
         });
-
-    } catch (err) {
-
-        console.error("Feedback load error:", err);
-
-    }
-
+    } catch (err) { console.error(err); }
 }
-
 
 // ================= ADMIN =================
-function loadAdmin() {
-
-    if (!userRole || userRole !== "admin") {
-
-        alert("Access denied!");
-        showSection("home");
-        return;
-
-    }
-
-    loadAdminReport();
-    loadAdminFeedback();
-
+async function loadAdmin() {
+    if (!userRole || userRole !== "admin") { alert("Access denied!"); showSection("home"); return; }
+    await loadAdminReport(); await loadAdminFeedback();
 }
 
-
 async function loadAdminReport() {
-
     try {
-
-        const res = await axios.get(`${PAYMENT_URL}/report`, {
-            headers: authHeaders()
-        });
-
-        const totalPayments = document.getElementById("totalPayments");
-        const zakatData = document.getElementById("zakatData");
-        const dailyMonthlyData = document.getElementById("dailyMonthlyData");
-
-        if (totalPayments)
-            totalPayments.innerText = `₹${res.data.totalCollection || 0}`;
-
-        if (zakatData)
-            zakatData.innerText = `₹${res.data.zakatCollection || 0}`;
-
-        if (dailyMonthlyData)
-            dailyMonthlyData.innerText = `₹${res.data.generalCollection || 0}`;
-
-    } catch (err) {
-
-        console.error("Admin report error:", err);
-
-    }
-
+        const res = await axios.get(`${PAYMENT_URL}/report`, { headers: authHeaders() });
+        document.getElementById("totalPayments").innerText = `₹${res.data.totalCollection || 0}`;
+        document.getElementById("zakatData").innerText = `₹${res.data.zakatCollection || 0}`;
+        document.getElementById("dailyMonthlyData").innerText = `₹${res.data.generalCollection || 0}`;
+    } catch (err) { console.error("Admin report error:", err); }
 }
