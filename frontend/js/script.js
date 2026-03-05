@@ -142,7 +142,7 @@ async function submitFeedback() {
         });
 
         feedbackText.value = "";
-        loadFeedback();
+        loadAdminFeedback();
 
     } catch (err) {
         console.error(err);
