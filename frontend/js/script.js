@@ -74,44 +74,55 @@ async function register() {
 }
 
 
-// ================= LOGIN =================
 async function login() {
-    const email = logEmail.value.trim();
-    const password = logPass.value.trim();
-    const msg = logMsg;
+
+    const email = document.getElementById("logEmail").value.trim();
+    const password = document.getElementById("logPass").value.trim();
+    const msg = document.getElementById("logMsg");
 
     if (!email || !password) {
         msg.style.color = "orange";
-        msg.innerText = "Fill all fields!";
+        msg.innerText = "Please fill all fields!";
         return;
     }
 
     try {
-        const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
 
-        jwtToken = res.data.token;
-        userRole = res.data.user.role;
+        const res = await axios.post(`${BASE_URL}/auth/login`, {
+            email,
+            password
+        });
+
+        const data = res.data;
+
+        // token save
+        jwtToken = data.token;
+        userRole = data.user.role;
 
         localStorage.setItem("jwtToken", jwtToken);
         localStorage.setItem("role", userRole);
+
+        msg.style.color = "green";
+        msg.innerText = "Login successful!";
 
         if (userRole === "admin") {
             document.getElementById("adminNav").style.display = "inline-block";
         }
 
-        msg.style.color = "green";
-        msg.innerText = "Login successful!";
-        setTimeout(() => showSection("home"), 1000);
+        showSection("home");
 
     } catch (err) {
+
+        console.error(err.response?.data);
+
         msg.style.color = "red";
-        msg.innerText = err.response?.data?.message || "Invalid credentials";
+        msg.innerText = err.response?.data?.message || "Login failed";
     }
 }
 
-
 // ================= LOGOUT =================
 function logout() {
+
     jwtToken = null;
     userRole = null;
 
@@ -124,7 +135,6 @@ function logout() {
     alert("Logged out successfully!");
     showSection("home");
 }
-
 
 // ================= FEEDBACK =================
 async function submitFeedback() {
@@ -142,18 +152,19 @@ async function submitFeedback() {
         });
 
         feedbackText.value = "";
-        loadAdminFeedback();
+        alert("Feedback submitted successfully!");
 
     } catch (err) {
         console.error(err);
     }
 }
-
 async function loadAdminFeedback() {
     try {
         const res = await axios.get(FEEDBACK_URL);
 
         const container = document.getElementById("adminFeedbackList");
+        if (!container) return;
+
         container.innerHTML = "";
 
         res.data.forEach(f => {
@@ -161,15 +172,15 @@ async function loadAdminFeedback() {
                 <div class="card p-2 mb-2">
                     <strong>${f.name}</strong>
                     <p>${f.message}</p>
-                    <small>${new Date(f.date).toLocaleString()}</small>
-                </div>`;
+                    <small>${new Date(f.createdAt).toLocaleString()}</small>
+                </div>
+            `;
         });
 
     } catch (err) {
         console.error("Admin feedback error:", err);
     }
 }
-
 // ================= PAYMENT =================
 async function makePayment() {
     try {
@@ -266,22 +277,35 @@ async function loadProfileData() {
 
 // ================= ADMIN =================
 function loadAdmin() {
-    if (userRole !== "admin") {
+
+    // role check
+    if (!userRole || userRole !== "admin") {
         alert("Access denied!");
         showSection("home");
         return;
     }
+
+    // admin data load
     loadAdminReport();
+    loadAdminFeedback();
 }
 
 async function loadAdminReport() {
     try {
-        const res = await axios.get(`${PAYMENT_URL}/report`,
-            { headers: authHeaders() });
 
-        totalPayments.innerText = `₹${res.data.totalCollection}`;
-        zakatData.innerText = `₹${res.data.zakatCollection}`;
-        dailyMonthlyData.innerText = `₹${res.data.generalCollection}`;
+        const res = await axios.get(`${PAYMENT_URL}/report`, {
+            headers: authHeaders()
+        });
+
+        // element check
+        if (totalPayments)
+            totalPayments.innerText = `₹${res.data.totalCollection || 0}`;
+
+        if (zakatData)
+            zakatData.innerText = `₹${res.data.zakatCollection || 0}`;
+
+        if (dailyMonthlyData)
+            dailyMonthlyData.innerText = `₹${res.data.generalCollection || 0}`;
 
     } catch (err) {
         console.error("Admin report error:", err);
