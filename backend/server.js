@@ -11,7 +11,10 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:5500", "https://hopeharbor-website-1.onrender.com"],
+    credentials: true
+}));
 app.use(express.json());
 
 // MongoDB
