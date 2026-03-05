@@ -2,7 +2,7 @@ import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Payment from "../models/Payment.js";
-import auth, { isAdmin } from "../middleware/auth.js";
+import { auth, adminOnly } from "../middleware/auth.js";
 
 const router = express.Router();
 
