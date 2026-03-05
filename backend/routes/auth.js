@@ -33,24 +33,34 @@ router.post("/register", async (req, res) => {
 // LOGIN
 router.post("/login", async (req, res) => {
     try {
+
+        console.log("LOGIN BODY:", req.body);
+
         const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ message: "Email & Password required" });
 
         const user = await User.findOne({ email });
+        console.log("USER:", user);
+
         if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log("PASSWORD MATCH:", isMatch);
+
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
 
         res.json({ token, user: { name: user.name, email: user.email, role: user.role } });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Server error" });
     }
 });
-
 // GET CURRENT USER
 router.get("/me", async (req, res) => {
     try {
