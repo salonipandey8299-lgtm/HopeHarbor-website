@@ -1,30 +1,32 @@
+import "dotenv/config";  // loads .env
 import express from "express";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import cors from "cors";
 
 import authRoutes from "./routes/auth.js";
 import feedbackRoutes from "./routes/feedback.js";
-
-dotenv.config();
+import paymentRoutes from "./routes/payment.js";
 
 const app = express();
 
-// Middlewares
+// MIDDLEWARES
 app.use(cors({ origin: '*' }))
 app.use(express.json());
 
-// MongoDB
-mongoose.connect(process.env.MONGO_URI, { dbName: "trustdb" })
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.error("❌ MongoDB Error:", err));
+// DATABASE
+mongoose.connect(process.env.MONGO_URI, { dbName: "trustDB" })
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log(err));
 
-// Routes
+// ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/payment", paymentRoutes);
 
-app.get("/", (req, res) => res.send("Server is running!"));
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
 
-// Start server
+// SERVER START
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

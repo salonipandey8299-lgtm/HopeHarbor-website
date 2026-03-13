@@ -1,44 +1,59 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true
+    },
+
+    password: {
+      type: String,
+      required: true
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user"
+    }
   },
+  { timestamps: true }
+);
 
-  email: { 
-    type: String, 
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-
-  password: {
-    type: String,
-    required: true
-  },
-
-  role: { 
-    type: String, 
-    default: "user",
-    enum: ["user", "admin"]
-  },
-
-}, { timestamps: true });
-
-// ===== PASSWORD HASHING =====
+// 🔐 HASH PASSWORD BEFORE SAVE
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-  this.password = await bcrypt.hash(this.password, 10);
+  try {
+    // Agar password modify nahi hua to skip
+    if (!this.isModified("password")) return;
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (err) {
+    console.error("PASSWORD HASH ERROR:", err);
+    throw new Error("Error hashing password");
+  }
 });
 
-// ===== COMPARE PASSWORD =====
+// 🔑 COMPARE PASSWORD - login ke liye
 userSchema.methods.comparePassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
+  try {
+    return await bcrypt.compare(password, this.password);
+  } catch (err) {
+    console.error("PASSWORD COMPARE ERROR:", err);
+    throw new Error("Error comparing password");
+  }
 };
 
-// ===== EXPORT MODEL =====
+// ✅ Export User Model
 export default mongoose.model("User", userSchema);
